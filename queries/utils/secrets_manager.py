@@ -2,6 +2,7 @@ import os
 import json
 import boto3
 from botocore.exceptions import ClientError
+from dotenv import load_dotenv
 
 def get_secret(secret_name):
     """
@@ -10,7 +11,32 @@ def get_secret(secret_name):
         secret_name: Name of the secret to retrieve
     Returns:
         dict: The secret key/value pairs
-    """
+    """    
+    load_dotenv()
+
+    opensearch_host = os.environ.get('OPENSEARCH_HOST', '')
+    if opensearch_host == 'opensearch-node1':
+        print(f"[INFO] Using local fallback for secret: {secret_name}")
+
+        if 'opensearch' in secret_name:
+            return {
+                "host": os.environ.get("OPENSEARCH_HOST"),
+                "port": os.environ.get("OPENSEARCH_PORT", "9200")
+            }
+
+        if 'postgres' in secret_name:
+            return {
+                "username": os.environ.get("POSTGRES_USER"),
+                "password": os.environ.get("POSTGRES_PASSWORD"),
+                "engine": "postgres",
+                "host": os.environ.get("POSTGRES_HOST"),
+                "port": os.environ.get("POSTGRES_PORT"),
+                "dbClusterIdentifier": "local",
+                "db": os.environ.get("POSTGRES_DB")
+            }
+
+        raise Exception(f"Unknown local secret requested: {secret_name}")
+
     region_name = os.environ.get('AWS_REGION', 'us-east-1')
 
     # Create a Secrets Manager client
