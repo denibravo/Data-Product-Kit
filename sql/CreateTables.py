@@ -176,6 +176,17 @@ def create_agencies_table(conn: psycopg.Connection):
     );
     """
     _create_table(conn, query, "agencies")
+    
+def create_summaries_table(conn: psycopg.Connection):
+    # other fields can be added to this to support additional fields like AI Summary
+    query = """ 
+    CREATE TABLE summaries (
+        docket_id VARCHAR(50) NOT NULL REFERENCES dockets(docket_id),
+        abstract TEXT, 
+        summary TEXT
+    );
+    """
+    _create_table(conn, query, "summaries")
 
 
 def insert_agencies_data(conn: psycopg.Connection, file_path: str):
@@ -237,6 +248,7 @@ def main():
     create_comments_table(conn)
     create_agencies_table(conn)
     create_stored_results_table(conn)
+    create_summaries_table(conn)
 
     # Insert data into the agencies table
     insert_agencies_data(conn, "agencies.txt")
