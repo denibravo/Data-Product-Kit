@@ -2,7 +2,6 @@ folders=(
 CDC
 )
 # 
-rm IngestAttachments.log
 mkdir -p IngestAttachmentLogs
 for folder in "${folders[@]}"
 do

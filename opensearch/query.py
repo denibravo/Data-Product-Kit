@@ -19,12 +19,12 @@ query = {
         "docketId_stats": {
             "terms": {
                 "field": "docketId.keyword",  # Use .keyword for exact match on text fields
-                "size": 1000  # Adjust size for expected number of unique docketIds
+                "size": 1000000  # Adjust size for expected number of unique docketIds
             },
             "aggs": {
                 "matching_comments": {
                     "filter": {
-                        "match": {
+                        "match_phrase": {
                             "commentText": search_term
                         }
                     }

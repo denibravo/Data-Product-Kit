@@ -9,17 +9,14 @@ def query_OpenSearch(search_term):
         "aggs": {
             "docketId_stats": {
                 "terms": {
-                    "field": "docketId.keyword",
-                    "size": 1000
+                    "field": "docketId.keyword",  # Use .keyword for exact match on text fields
+                    "size": 1000000  # Adjust size for expected number of unique docketIds
                 },
                 "aggs": {
                     "matching_comments": {
                         "filter": {
-                            "match": {
-                                "commentText": {
-                                    "query": search_term,
-                                    "operator": "and"
-                                }
+                            "match_phrase": {
+                                "commentText": search_term
                             }
                         }
                     }

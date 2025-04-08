@@ -3,7 +3,7 @@ from math import exp
 from dateutil import parser as date_parser
 from datetime import datetime
 from queries.utils.query_opensearch import query_OpenSearch
-from queries.utils.query_sql import append_docket_titles
+from queries.utils.query_sql import append_docket_fields, append_agency_fields, append_document_counts
 from queries.utils.sql import connect
 
 def filter_dockets(dockets, filter_params=None):
@@ -199,7 +199,9 @@ def search(search_params):
         drop_previous_results(searchTerm, sessionID, sortParams, filterParams)
 
         os_results = query_OpenSearch(searchTerm)
-        results = append_docket_titles(os_results, connect())
+        results = append_docket_fields(os_results, connect())
+        results = append_agency_fields(results, connect())
+        results = append_document_counts(results, connect())
 
         for docket in results:
             docket["matchQuality"] = calc_relevance_score(docket)
@@ -263,7 +265,9 @@ def search(search_params):
         if count_dockets % perPage:
             count_pages += 1
 
-        dockets = append_docket_titles(dockets, connect())
+        dockets = append_docket_fields(dockets, connect())
+        dockets = append_agency_fields(dockets, connect())
+        dockets = append_document_counts(dockets, connect())
         ret = {"currentPage": 0, "totalPages": count_pages, "dockets": dockets}
 
         return json.dumps(ret)

@@ -11,13 +11,16 @@ def get_data_from_file(file_path):
             file_text = file.read()
             method = file_path.split('/')[-2]
             base_name = os.path.basename(file_path)
-            comment_id = base_name.split("_attachment")[0]
+            comment_id, remainder = base_name.split("_attachment_")
+            attachment_id = remainder.split("_extracted")[0]
+            attachment_id = comment_id + "-" + attachment_id
             docket_id = "-".join(comment_id.split("-")[:-1])
             document = {
                 'extractedText': file_text,
                 'extractedMethod': method,
                 'docketId': docket_id,
-                'commentId': comment_id
+                'commentId': comment_id,
+                'attachmentId': attachment_id,
             }
             return document
         except Exception as e:
@@ -25,14 +28,14 @@ def get_data_from_file(file_path):
             print(e)
             return None
 
-def  bulk_ingest_all(client, directory_name, index_name, ingest_per_bulk, total_to_ingest):
+def  bulk_ingest_all(client, directory_name, index_name, max_mb_per_bulk):
     # the ingest_string will be used to store the bulk ingest request
     ingest_string = ""
 
     # total_count will keep track of the total number of documents ingested
     total_count = 0
-    # bulk_count will keep track of the number of documents in the current bulk request
-    bulk_count = 0
+    # current_chars will keep track of the current number of characters in the ingest_string
+    current_chars = 0
 
 
     for dirpath, dirnames, filenames in os.walk(directory_name):
@@ -41,36 +44,44 @@ def  bulk_ingest_all(client, directory_name, index_name, ingest_per_bulk, total_
                 document = get_data_from_file(os.path.join(dirpath, filename))
                 if not document:
                     continue
-                comment_id = document['commentId']
+                attachment_id = document['attachmentId']
             
                 # the action line is used to specify the index name
-                action = f'{{"index": {{"_index": "{index_name}", "_id": "{comment_id}"}}}}\n'
-                ingest_string += action
+                action = f'{{"index": {{"_index": "{index_name}", "_id": "{attachment_id}"}}}}\n'
+                # the data_string is the document to be ingested
+                data_string = json.dumps(document) + '\n'
 
-                # we get the document from the file and add it to the ingest_string
-                ingest_string += json.dumps(document) + '\n'
-
-                # increase both counts by 1
-                total_count += 1
-                bulk_count += 1
-
-                # if the bulk_count is equal to the ingest_per_bulk, we send the bulk ingest request and reset the bulk_count and ingest_string
-                if bulk_count == ingest_per_bulk:
+                # if the current_chars + the length of the action line + the length of the data_string is greater than 50MB, we send the bulk ingest request
+                if current_chars + len(action) + len(data_string) > max_mb_per_bulk * 1024 * 1024:
                     try:
                         response = client.bulk(body = ingest_string)
                         print(f"Total documents ingested: {total_count}")
-                        bulk_count = 0
+                        # reset the ingest_string and current_chars
                         ingest_string = ""
+                        current_chars = 0
                     except Exception as e:
                         print(f"Error sending bulk request: {e}")
-                        print(ingest_string)
                         print()
+                
+                # if the current action line + the length of the data_string is greater than 50MB, we print the commentID and continue
+                if len(action) + len(data_string) > max_mb_per_bulk * 1024 * 1024:
+                    print(f"CommentID: {comment_id} is too large to ingest")
+                    continue
+
+                # add the length of the action line + the length of the data_string to the current_chars
+                current_chars += len(action) + len(data_string)
+
+                ingest_string += action
+                ingest_string += data_string
+
+                # increment the total_count
+                total_count += 1
 
     # if there are any documents left in the ingest_string, we send the bulk ingest request
     if ingest_string:
         try:
-            print(f"Total documents ingested: {total_count}")
             response = client.bulk(body = ingest_string)
+            print(f"Total documents ingested: {total_count}")
         except Exception as e:
             print(f"Error sending bulk request: {e}")
             print(ingest_string)
@@ -96,8 +107,8 @@ if __name__ == '__main__':
     if args.time:
         start = time.time()
         
-    ingest_per_bulk = 1000
-    bulk_ingest_all(client, directory_name, index_name, ingest_per_bulk, total_to_ingest)
+    max_mb_per_bulk = 50
+    bulk_ingest_all(client, directory_name, index_name, max_mb_per_bulk)
     
     if args.time:
         end = time.time()

@@ -12,12 +12,12 @@ def extracted_text_query(search_term):
             "docketId_stats": {
                 "terms": {
                     "field": "docketId.keyword",  # Use .keyword for exact match on text fields
-                    "size": 1000 # number of matching extracted texts to return
+                    "size": 1000000 # number of matching extracted texts to return
                 },
                 "aggs": {
                     "matching_attachments": {
                         "filter": {
-                            "match": {
+                            "match_phrase": {
                                     "extractedText": search_term 
                                 }
                         }
