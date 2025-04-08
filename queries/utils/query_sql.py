@@ -46,7 +46,8 @@ def append_docket_fields(dockets_list, db_conn=None):
 
     try:
         # Extract docket IDs from dockets list
-        docket_ids = [item["id"] for item in dockets_list]
+        docket_ids = [item["id"].strip() for item in dockets_list]
+        logging.info(f"[DEBUG] Docket IDs from OpenSearch: {docket_ids}")
 
         # Query to fetch docket fields
         query = """
@@ -56,8 +57,6 @@ def append_docket_fields(dockets_list, db_conn=None):
         """
 
         cursor.execute(query, (docket_ids,))
-
-        # Fetch results and format them as JSON
         results = cursor.fetchall()
         docket_titles = {row[0]: row[1] for row in results}
         modify_dates = {row[0]: row[2].isoformat() for row in results}

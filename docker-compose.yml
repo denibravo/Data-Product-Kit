@@ -33,6 +33,7 @@ services:
         condition: service_healthy
     volumes:
       - ./sql:/app
+      - ./data:/app/data
       - ~/.aws:/root/.aws:ro  
     working_dir: /app  
     entrypoint: ["tail", "-f", "/dev/null"]
@@ -140,7 +141,7 @@ services:
     env_file:
       - ./.env
     environment:
-      - PYTHONPATH=/app/queries
+      - PYTHONPATH=/app
     networks:
       - shared_network
     depends_on:

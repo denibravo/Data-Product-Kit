@@ -228,7 +228,12 @@ def search(search_params):
 
         print(sorted_results)
 
-        storeDockets(sorted_results, searchTerm, sessionID, json.loads(sortParams), json.loads(filterParams), totalResults)
+        if isinstance(sortParams, str):
+            sortParams = json.loads(sortParams)
+        if isinstance(filterParams, str):
+            filterParams = json.loads(filterParams)
+
+        storeDockets(sorted_results, searchTerm, sessionID, sortParams, filterParams, totalResults)
 
         count_dockets = len(sorted_results)
         count_pages = min(count_dockets // perPage, pages)
@@ -275,7 +280,7 @@ def search(search_params):
 
 if __name__ == "__main__":
     query_params = {
-        "searchTerm": "gun",
+        "searchTerm": "National",
         "pageNumber": 0,
         "refreshResults": True,
         "sessionID": "session1",
@@ -296,8 +301,10 @@ if __name__ == "__main__":
     searchTerm = query_params["searchTerm"]
     print(f"searchTerm: {searchTerm}")
 
-    dockets, total_pages = search(json.dumps(query_params))
-
+    result = search(query_params)
+    dockets = result["dockets"]
+    total_pages = result["totalPages"]
+    
     result = {
         "currentPage": query_params["pageNumber"],
         "totalPages": total_pages,

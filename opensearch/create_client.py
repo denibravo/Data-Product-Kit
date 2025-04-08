@@ -5,51 +5,43 @@ import boto3
 from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
 
 '''
-This function creates an OpenSearch client. If the environment variables OPENSEARCH_HOST if OPENSEARCH_PORT are not
-set, an error is raised. If the host is set to 'localhost', the client is created with basic authentication. Otherwise,
-the client is created with AWS request signing. The function returns the OpenSearch client.
-
-All code that depends on whether we are connecting to a local or production OpenSearch instance is inside of this function.
-Outside of the function, interaction with the client is the same regardless of the environment.
+This function creates an OpenSearch client. If the environment variables OPENSEARCH_HOST and OPENSEARCH_PORT are not
+set, an error is raised. If ENVIRONMENT is set to 'local', it connects using basic auth. Otherwise,
+it uses AWS request signing. This abstracts away local vs cloud setup.
 '''
 def create_client():
     load_dotenv()
 
+    env = os.getenv("ENVIRONMENT", "local").lower()
     host = os.getenv('OPENSEARCH_HOST')
     port = os.getenv('OPENSEARCH_PORT')
     region = 'us-east-1'
 
-    if host is None or port is None:
+    if not host or not port:
         raise ValueError('Please set the environment variables OPENSEARCH_HOST and OPENSEARCH_PORT')
-    
-    if host == 'opensearch-node1':
+
+    if env == "local":
         auth = ('admin', os.getenv('OPENSEARCH_INITIAL_ADMIN_PASSWORD'))
 
         ca_certs_path = certifi.where()
-        # Create the client with SSL/TLS enabled, but hostname verification disabled.
         client = OpenSearch(
-            hosts = [{'host': host, 'port': port}],
-            http_compress = True, # enables gzip compression for request bodies
-            http_auth = auth,
-            use_ssl = False,
-            verify_certs = False,
-            # ssl_assert_hostname = False,
-            ssl_show_warn = False,
-            # ca_certs = ca_certs_path
+            hosts=[{'host': host, 'port': int(port)}],
+            http_compress=True,
+            http_auth=auth,
+            use_ssl=False,
+            verify_certs=False,
+            ssl_show_warn=False,
             connection_class=RequestsHttpConnection
         )
-
         return client
-    
+
     service = 'aoss'
     credentials = boto3.Session().get_credentials()
     auth = AWSV4SignerAuth(credentials, region, service)
 
-
-    # Create the client using AWS request signing
     client = OpenSearch(
-        hosts=[{'host': host, 'port': port}],
-        http_compress = True, # enables gzip compression for request bodies
+        hosts=[{'host': host, 'port': int(port)}],
+        http_compress=True,
         http_auth=auth,
         use_ssl=True,
         verify_certs=True,
