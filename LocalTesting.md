@@ -76,3 +76,19 @@ docker-compose exec ingest python /app/ingest.py
 ```
 
 By resetting your data infrastructure this way, you eliminate hidden state that might be causing issues.
+
+## Clean Reset (Optional)
+If you want a completely clean slate including everything run:
+```bash
+docker compose down -v --remove-orphans
+docker system prune -af --volumes
+```
+Then rerun docker:
+```bash
+docker compose build --no-cache
+docker compose up -d
+```
+Remember to recreate the tables afterwards:
+```bash
+docker-compose exec sql-client python CreateTables.py 
+```
