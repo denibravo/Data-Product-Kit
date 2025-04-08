@@ -44,10 +44,10 @@ def append_docket_titles(dockets_list, db_conn=None):
     conn = db_conn if db_conn else get_db_connection()
     cursor = conn.cursor()
 
-
     try:
         # Extract docket IDs from dockets list
-        docket_ids = [item["id"] for item in dockets_list]
+        docket_ids = [item["id"].strip() for item in dockets_list]
+        logging.info(f"[DEBUG] Docket IDs from OpenSearch: {docket_ids}")
 
         # Query to fetch docket titles
         query = """
@@ -59,24 +59,30 @@ def append_docket_titles(dockets_list, db_conn=None):
         """
 
         cursor.execute(query, (docket_ids,))
-
-        # Fetch results and format them as JSON
         results = cursor.fetchall()
-        docket_titles = {row[0]: row[1] for row in results}
-        modify_dates = {row[0]: row[2].isoformat() for row in results}
-        agency_ids = {row[0]: row[3] for row in results}
-        agency_names = {row[0]: row[4] for row in results}
-        docket_types = {row[0]: row[5] for row in results}
-        docket_abstracts = {row[0]: row[6] for row in results}
+
+        logging.info(f"[DEBUG] Dockets returned from SQL: {[row[0] for row in results]}")
+
+        # Map SQL results
+        docket_titles = {row[0].strip(): row[1] for row in results}
+        modify_dates = {row[0].strip(): row[2].isoformat() for row in results}
+        agency_ids = {row[0].strip(): row[3] for row in results}
+        agency_names = {row[0].strip(): row[4] for row in results}
+        docket_types = {row[0].strip(): row[5] for row in results}
+        docket_abstracts = {row[0].strip(): row[6] for row in results}
 
         # Append additional fields to the dockets list
         for item in dockets_list:
-            item["title"] = docket_titles.get(item["id"], "Title Not Found")
-            item["dateModified"] = modify_dates.get(item["id"], "Date Not Found")
-            item["agencyID"] = agency_ids.get(item["id"], "Agency Not Found")
-            item["agencyName"] = agency_names.get(item["id"], "Agency Name Not Found")
-            item["docketType"] = docket_types.get(item["id"], "Docket Type Not Found")
-            item["docketAbstract"] = docket_abstracts.get(item["id"], "Docket Abstract Not Found")
+            docket_id = item["id"].strip()
+            item["title"] = docket_titles.get(docket_id, "Title Not Found")
+            item["dateModified"] = modify_dates.get(docket_id, "Date Not Found")
+            item["agencyID"] = agency_ids.get(docket_id, "Agency Not Found")
+            item["agencyName"] = agency_names.get(docket_id, "Agency Name Not Found")
+            item["docketType"] = docket_types.get(docket_id, "Docket Type Not Found")
+            item["docketAbstract"] = docket_abstracts.get(docket_id, "Docket Abstract Not Found")
+
+        # See what survives the filter
+        logging.info(f"[DEBUG] Number of dockets with valid titles: {len([item for item in dockets_list if item['title'] != 'Title Not Found'])}")
 
         dockets_list = [item for item in dockets_list if item["title"] != "Title Not Found"]
 
@@ -92,5 +98,4 @@ def append_docket_titles(dockets_list, db_conn=None):
             conn.close()
         logging.info("Database connection closed.")
 
-    # Return the updated list
     return dockets_list

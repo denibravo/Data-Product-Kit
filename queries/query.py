@@ -271,7 +271,7 @@ def search(search_params):
 
 if __name__ == "__main__":
     query_params = {
-        "searchTerm": "gun",
+        "searchTerm": "National",
         "pageNumber": 0,
         "refreshResults": True,
         "sessionID": "session1",
@@ -292,8 +292,10 @@ if __name__ == "__main__":
     searchTerm = query_params["searchTerm"]
     print(f"searchTerm: {searchTerm}")
 
-    dockets, total_pages = search(json.dumps(query_params))
-
+    result = search(query_params)
+    dockets = result["dockets"]
+    total_pages = result["totalPages"]
+    
     result = {
         "currentPage": query_params["pageNumber"],
         "totalPages": total_pages,
