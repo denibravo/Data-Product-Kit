@@ -228,10 +228,10 @@ def search(search_params):
 
         print(sorted_results)
 
-        # storeDockets(sorted_results, searchTerm, sessionID, json.loads(sortParams), json.loads(filterParams), totalResults)
+        storeDockets(sorted_results, searchTerm, sessionID, json.loads(sortParams), json.loads(filterParams), totalResults)
 
         count_dockets = len(sorted_results)
-        count_pages = count_dockets // perPage
+        count_pages = min(count_dockets // perPage, pages)
         if count_dockets % perPage:
             count_pages += 1
 
