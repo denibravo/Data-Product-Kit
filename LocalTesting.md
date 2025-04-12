@@ -6,12 +6,12 @@ ENVIRONMENT=local
 
 1. **Ingest dockets/documents/comments from S3 into SQL**:
    ```bash
-   docker-compose exec sql-client python IngestDocket.py <DOCKET_ID>
+   docker-compose exec sql-client python IngestFromBucket.py <S3_BUCKET_NAME>
    ```
 
    Example:
    ```bash
-   docker-compose exec sql-client python IngestDocket.py DOS-2022-0004
+   docker-compose exec sql-client python IngestDocket.py docket-samples
    ```
 
 2. **Verify insertion worked (optional)**:
@@ -24,15 +24,9 @@ ENVIRONMENT=local
 
 3. **Ingest comments into OpenSearch**:
    ```bash
-   docker-compose exec ingest python /app/ingest.py
+   docker exec -it ingest-container bash -c "python -m dp_ingest_local.utils.ingest_opensearch"
    ```
-
-   (That runs the logic from your `ingest_all_comments()` function using S3 bucket paths.)
-
-4. **Test query again** from the `queries` container or front end:
-   ```bash
-   docker-compose exec queries python query.py "National"
-   ```
+**NOTE:** This script pulls from the s3 bucket in the environment variable --> S3_BUCKET_NAME in `.env`
 
 ## Troubleshooting with a Clean Slate
 
@@ -69,10 +63,10 @@ docker-compose exec sql-client python CreateTables.py
 **5. Re-ingest your data (SQL & OpenSearch):**
 ```bash
 # For SQL:
-docker-compose exec sql-client python IngestDocket.py <DOCKET_ID>
+ docker-compose exec sql-client python IngestFromBucket.py <S3_BUCKET_NAME>
 
-# For OpenSearch (comments):
-docker-compose exec ingest python /app/ingest.py
+# For OpenSearch:
+ docker exec -it ingest-container bash -c "python -m dp_ingest_local.utils.ingest_opensearch"
 ```
 
 By resetting your data infrastructure this way, you eliminate hidden state that might be causing issues.
