@@ -130,6 +130,7 @@ services:
       opensearch-node2:
         condition: service_healthy
     volumes:
+      - .:/app
       - ~/.aws:/root/.aws:ro  
     command: ["/bin/sh", "-c", "while true; do sleep 30; done"] 
 
