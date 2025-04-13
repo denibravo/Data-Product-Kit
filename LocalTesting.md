@@ -66,7 +66,7 @@ docker-compose exec sql-client python CreateTables.py
  docker-compose exec sql-client python IngestFromBucket.py <S3_BUCKET_NAME>
 
 # For OpenSearch:
- docker exec -it ingest-container bash -c "python -m dp_ingest_local.utils.ingest_opensearch"
+ docker exec -it ingest-container bash -c "python -m dp_ingest.utils.ingest_opensearch"
 ```
 
 By resetting your data infrastructure this way, you eliminate hidden state that might be causing issues.
