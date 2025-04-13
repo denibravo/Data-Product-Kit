@@ -37,6 +37,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Make sure to initiate the submodule:
+```bash
+git submodule update --init
+```
+
 ## Setting Up the Environment Variables
 
 Create a `.env` file in the parent directory with the following fields:
