@@ -11,7 +11,7 @@ ENVIRONMENT=local
 
    Example:
    ```bash
-   docker-compose exec sql-client python IngestDocket.py docket-samples
+   docker-compose exec sql-client python IngestFromBucket.py docket-samples
    ```
 
 2. **Verify insertion worked (optional)**:
@@ -24,7 +24,7 @@ ENVIRONMENT=local
 
 3. **Ingest comments into OpenSearch**:
    ```bash
-   docker exec -it ingest-container bash -c "python -m dp_ingest_local.utils.ingest_opensearch"
+   docker exec -it ingest-container bash -c "python -m dp_ingest.utils.ingest_opensearch"
    ```
 **NOTE:** This script pulls from the s3 bucket in the environment variable --> S3_BUCKET_NAME in `.env`
 

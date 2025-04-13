@@ -1,0 +1,3 @@
+[submodule "dp_ingest"]
+	path = dp_ingest
+	url = https://github.com/mirrulations/DP-ingests.git
