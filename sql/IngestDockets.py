@@ -1,6 +1,6 @@
-from utilities.ingest_comment import insert_comment
-from utilities.ingest_docket import insert_docket
-from utilities.ingest_document import insert_document
+from .utilities.ingest_comment import insert_comment
+from .utilities.ingest_docket import insert_docket
+from .utilities.ingest_document import insert_document
 import boto3
 import sys
 import os

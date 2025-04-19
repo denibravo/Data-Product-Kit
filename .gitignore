@@ -2,3 +2,7 @@
 *.pyc
 .env
 __pycache__/
+opensearch/docket-samples/
+
+.DS_Store
+

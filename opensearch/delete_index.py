@@ -1,3 +1,8 @@
+t"""
+This script deletes  indexes from OpenSearch. It prompts the user for confirmation before deleting the index.
+It uses the OpenSearch client created in create_client.py.
+Authors: Data Product Team Spring 2025
+"""
 from create_client import create_client
 
 

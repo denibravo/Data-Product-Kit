@@ -1,12 +1,12 @@
 import os
 import json
 import boto3
-from create_client import create_client
+
 
 
 def ingest(client, document):
     response = client.index(index = 'comments', body = document)
-    print(response)
+   # print(response)
 
 def ingest_comment(client, bucket, key):
     obj = bucket.Object(key)
@@ -20,12 +20,14 @@ def ingest_comment(client, bucket, key):
     ingest(client, document)
 
 def ingest_all_comments(client, bucket):
+    print("bucket = ", bucket)
     for obj in bucket.objects.all():
         if obj.key.endswith('.json') and ('/comments/' in obj.key):
             ingest_comment(client, bucket, obj.key)
 
 
 if __name__ == '__main__':
+    from create_client import create_client
     client = create_client()
 
     s3 = boto3.resource(
@@ -36,5 +38,4 @@ if __name__ == '__main__':
     print('boto3 created')
 
     bucket = s3.Bucket(os.getenv('S3_BUCKET_NAME'))
-
-    ingest_all_comments(client, bucket)
+    # ingest_all_comments(client, bucket)
