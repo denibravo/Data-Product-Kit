@@ -77,7 +77,7 @@ def categorize_and_process_files(bucket, conn, file_list):
 def get_s3_files(bucket, docket_id: str):
     agency = get_agency(docket_id)
     files = bucket.objects.filter(
-        Prefix=f"{agency}/{docket_id}",
+        Prefix=f"raw-data/{agency}/{docket_id}",
     )
     return [file.key for file in files if file.key.endswith(".json")]
 
