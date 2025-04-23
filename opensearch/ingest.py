@@ -3,7 +3,6 @@ import json
 import boto3
 
 
-
 def ingest(client, document):
     response = client.index(index = 'comments', body = document)
    # print(response)
