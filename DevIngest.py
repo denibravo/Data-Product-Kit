@@ -2,7 +2,7 @@ import opensearch.ingest as ingest
 import sql.IngestDockets as IngestDockets
 from opensearch.create_client import create_client
 import boto3 
-
+import sql.IngestDocket as IngestDocket
 
 SAMPLE_DOCKETS = [
      "FDA/FDA-2023-N-0437", #too many comments, (34k)
@@ -83,9 +83,16 @@ def IngestSQL():
     import sys
 
     #trick main to think that sys.argv is being passed (very hacky, but it works)
-    sys.argv = ['IngestDockets.py', 'dockets.txt']
-    IngestDockets.main()
-    
+    print("ingesting dockets to SQL ... This may take a while, \
+          go grab a coffee or something")
+          
+    for i in SAMPLE_DOCKETS:
+        sys.argv = ["IngestDocket.py",i]
+        IngestDocket.main()
+        print("ingested docket: ", i)
+        
 
-
-IngestSQL()
+if __name__ == "__main__":
+    IngestSQL()
+    print('Ingesting to SQL complete, now ingesting to OpenSearch')
+    IngestLocalOpenSearch()

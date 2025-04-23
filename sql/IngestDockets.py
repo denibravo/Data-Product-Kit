@@ -89,9 +89,10 @@ def main():
         sys.exit(1)
         
     file_path = sys.argv[1]  
-    
+   # print(file_path) 
     with open(file_path, 'r') as file:
         for line in file:
+            print(line)
             docket_id = line.strip()
             bucket_name = "mirrulations"
             s3 = boto3.resource(service_name="s3", region_name="us-east-1")

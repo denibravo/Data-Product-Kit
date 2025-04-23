@@ -1,6 +1,6 @@
-from utilities.ingest_comment import insert_comment
-from utilities.ingest_docket import insert_docket
-from utilities.ingest_document import insert_document
+from .utilities.ingest_comment import insert_comment
+from .utilities.ingest_docket import insert_docket
+from .utilities.ingest_document import insert_document
 import boto3
 import sys
 import os
@@ -77,7 +77,7 @@ def categorize_and_process_files(bucket, conn, file_list):
 def get_s3_files(bucket, docket_id: str):
     agency = get_agency(docket_id)
     files = bucket.objects.filter(
-        Prefix=f"{agency}/{docket_id}",
+        Prefix=f"raw-data/{agency}/{docket_id}",
     )
     return [file.key for file in files if file.key.endswith(".json")]
 
@@ -87,8 +87,9 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python IngestDocket.py <docket_id>")
         sys.exit(1)
-
+  
     docket_id = sys.argv[1]  # Get docket_id from command line
+    print(docket_id)
     bucket_name = "mirrulations"
     s3 = boto3.resource(service_name="s3", region_name="us-east-1")
 
