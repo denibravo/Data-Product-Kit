@@ -4,7 +4,8 @@ from DropTables import (
     drop_documents_table,
     drop_agencies_table,
     drop_stored_results_table,
-    drop_summaries_table,
+    drop_abstracts_table,
+    drop_htm_summaries_table,
 )
 from CreateTables import (
     create_comments_table,
@@ -12,8 +13,9 @@ from CreateTables import (
     create_documents_table,
     create_stored_results_table,
     create_agencies_table,
-    insert_agencies_data,
-    create_summaries_table,
+    create_abstracts_table,
+    create_htm_summaries_table,
+    insert_agencies_data
 )
 from dotenv import load_dotenv
 import psycopg
@@ -49,7 +51,8 @@ def main():
     drop_dockets_table(conn)
     drop_stored_results_table(conn)
     drop_agencies_table(conn)
-    drop_summaries_table(conn)
+    drop_abstracts_table(conn)
+    drop_htm_summaries_table(conn)
 
     print("\nRecreating tables...")
     create_dockets_table(conn)
@@ -57,7 +60,8 @@ def main():
     create_comments_table(conn)
     create_stored_results_table(conn)
     create_agencies_table(conn)
-    create_summaries_table(conn)
+    create_abstracts_table(conn)
+    create_htm_summaries_table(conn)
 
     print("\nInserting data into the agencies table...")
     insert_agencies_data(conn, "agencies.txt")

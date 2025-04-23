@@ -53,6 +53,12 @@ def drop_agencies_table(conn: psycopg.Connection):
 def drop_summaries_table(conn: psycopg.Connection):
     _drop_table(conn, "summaries")
 
+def drop_abstracts_table(conn: psycopg.Connection):
+    _drop_table(conn, "abstracts")
+
+def drop_htm_summaries_table(conn: psycopg.Connection):
+    _drop_table(conn, "htm_summaries")
+
 def main():
     load_dotenv()
 
@@ -79,6 +85,8 @@ def main():
     drop_dockets_table(conn)
     drop_documents_table(conn)
     drop_agencies_table(conn)
+    drop_abstracts_table(conn)
+    drop_htm_summaries_table(conn)
 
     conn.close()
 
