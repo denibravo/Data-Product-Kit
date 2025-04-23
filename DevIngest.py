@@ -64,7 +64,7 @@ def IngestLocalOpenSearch():
     )
 
  #   bucket = s3.Bucket('mirrulations')
-    bucket = s3.Bucket(f'mirrulations')
+    bucket = s3.Bucket('mirrulations')
  #  print(bucket.objects.all())
     for docket in SAMPLE_DOCKETS:
         print(docket)
