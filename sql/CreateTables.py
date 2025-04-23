@@ -14,6 +14,17 @@ def _create_table(conn: psycopg.Connection, query: str, table_name: str):
         print(f"An error occurred: {e}")
 
 
+def _insert_into_table(conn: psycopg.Connection, query: str, table_name: str):
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            conn.commit()
+            print(f"Inserted data into '{table_name}' successfully")
+    except psycopg.Error as e:
+        print(f"An error occurred: {e}")
+        sys.exit(1)
+
+
 def create_comments_table(conn: psycopg.Connection):
     query = """
                 CREATE TABLE comments (
@@ -40,7 +51,7 @@ def create_comments_table(conn: psycopg.Connection):
                     last_name VARCHAR(100),
                     modification_date TIMESTAMP WITH TIME ZONE,
                     submitter_org VARCHAR(200),
-                    phone VARCHAR(20),
+                    phone VARCHAR(40),
                     posted_date TIMESTAMP WITH TIME ZONE NOT NULL,
                     postmark_date TIMESTAMP WITH TIME ZONE,
                     reason_withdrawn VARCHAR(1000),
@@ -76,7 +87,8 @@ def create_dockets_table(conn: psycopg.Connection):
                     short_title VARCHAR,
                     flex_subtype1 TEXT,
                     flex_subtype2 TEXT,
-                    docket_title VARCHAR(500)
+                    docket_title VARCHAR(500),
+                    docket_abstract TEXT
                 );
             """
     _create_table(conn, query, "dockets")
@@ -113,7 +125,7 @@ def create_documents_table(conn: psycopg.Connection):
                     modify_date TIMESTAMP WITH TIME ZONE NOT NULL,
                     is_open_for_comment BOOLEAN DEFAULT FALSE,
                     submitter_org VARCHAR(200),
-                    phone VARCHAR(20),
+                    phone VARCHAR(40),
                     posted_date TIMESTAMP WITH TIME ZONE NOT NULL,
                     postmark_date TIMESTAMP WITH TIME ZONE,
                     reason_withdrawn VARCHAR(1000),
@@ -130,6 +142,85 @@ def create_documents_table(conn: psycopg.Connection):
                 );  
             """
     _create_table(conn, query, "documents")
+
+def create_stored_results_table(conn: psycopg.Connection):
+    query = """
+                CREATE TABLE stored_results (
+                    id SERIAL PRIMARY KEY,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), -- when the search is initially made, so we can periodically delete old searches
+                    -- info about the search: if all of these match, we return corresponding dockets
+                    search_term TEXT NOT NULL,
+                    session_id VARCHAR(255) NOT NULL,
+                    sort_asc BOOLEAN NOT NULL,
+                    sort_type VARCHAR(20) NOT NULL,
+                    filter_agencies TEXT NOT NULL, -- comma separated, alphabetical order, empty string for no filter
+                    filter_date_start TIMESTAMP WITH TIME ZONE NOT NULL,
+                    filter_date_end TIMESTAMP WITH TIME ZONE NOT NULL,
+                    filter_rulemaking VARCHAR(15) NOT NULL, -- empty string for no filter
+                    -- info about the docket
+                    search_rank INT NOT NULL,
+                    docket_id VARCHAR(50) NOT NULL,
+                    total_comments INT NOT NULL,
+                    matching_comments INT NOT NULL,
+                    relevance_score FLOAT NOT NULL
+                );
+            """
+    _create_table(conn, query, "stored_results")
+
+
+def create_agencies_table(conn: psycopg.Connection):
+    query = """
+    CREATE TABLE agencies (
+        agency_id VARCHAR(20) NOT NULL PRIMARY KEY,
+        agency_name VARCHAR(200) NOT NULL
+    );
+    """
+    _create_table(conn, query, "agencies")
+    
+def create_summaries_table(conn: psycopg.Connection):
+    # other fields can be added to this to support additional fields like AI Summary
+    query = """ 
+    CREATE TABLE summaries (
+        docket_id VARCHAR(50) NOT NULL REFERENCES dockets(docket_id),
+        abstract TEXT, 
+        summary TEXT
+    );
+    """
+    _create_table(conn, query, "summaries")
+
+
+def insert_agencies_data(conn: psycopg.Connection, file_path: str):
+    '''
+    Insert data into the agencies table from a text file called 'agencies.txt'
+    The first line outlines the format of the data in the file:
+    agency_id|agency_name
+    '''
+    try:
+        with open(file_path, 'r') as file:
+            # Read and parse the file
+            values = []
+            for line in file:
+                # Skip lines starting with '#'
+                if line.startswith('#'):
+                    continue
+
+                # Split the line into agency_id and agency_name
+                agency_id, agency_name = line.strip().split('|')
+                
+                # Escape single quotes in agency_name
+                agency_name = agency_name.replace("'", "''")
+                values.append(f"('{agency_id}', '{agency_name}')")
+
+            # Create the INSERT query
+            query = f"""
+            INSERT INTO agencies (agency_id, agency_name)
+            VALUES {', '.join(values)};
+            """
+
+            # Execute the query
+            _insert_into_table(conn, query, "agencies")
+    except Exception as e:
+        print(f"An error occurred while inserting data: {e}")
 
 
 def main():
@@ -155,6 +246,12 @@ def main():
     create_dockets_table(conn)
     create_documents_table(conn)
     create_comments_table(conn)
+    create_agencies_table(conn)
+    create_stored_results_table(conn)
+    create_summaries_table(conn)
+
+    # Insert data into the agencies table
+    insert_agencies_data(conn, "agencies.txt")
 
     conn.close()
 

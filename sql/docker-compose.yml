@@ -8,8 +8,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
+    networks:
+      - sql_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,26 @@ services:
       timeout: 5s
       retries: 5
 
+  sql-client:  
+    image: python:3.9-slim 
+    container_name: sql-client
+    env_file:
+      - .env
+    networks:
+      - sql_network  # Connects to the same network as the SQL container
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app  # Mounts the project directory to /app in the container
+      - ~/.aws:/root/.aws:ro  # Mounts AWS credentials to the container
+    working_dir: /app  # Set working directory inside the container
+    entrypoint: ["/bin/sh", "-c", "apt update && apt install -y postgresql-client && pip install --no-cache-dir -r requirements.txt && tail -f /dev/null"]
+
+networks:
+  sql_network:
+    name: sql_network
+    driver: bridge
+
 volumes:
   postgres_data:
-
-

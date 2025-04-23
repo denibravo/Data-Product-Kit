@@ -6,4 +6,4 @@ aws s3 sync s3://mirrulations/FTC/FTC-2019-0054/text-FTC-2019-0054/comments ./do
 aws s3 sync s3://mirrulations/FDA/FDA-2021-N-1088/text-FDA-2021-N-1088/comments ./docket-samples/FDA-2021-N-1088/text-FDA-2021-N-1088/comments
 aws s3 sync s3://mirrulations/HHS/HHS-OCR-2019-0007/text-HHS-OCR-2019-0007/comments ./docket-samples/HHS-OCR-2019-0007/text-HHS-OCR-2019-0007/comments
 aws s3 sync s3://mirrulations/HHS/HHS-OS-2019-0014/text-HHS-OS-2019-0014/comments ./docket-samples/HHS-OS-2019-0014/text-HHS-OS-2019-0014/comments
-
+aws s3 sync s3://mirrulations/CMS/CMS-2018-0135/text-CMS-2018-0135/comments ./docket-samples/CMS-2018-0135/text-CMS-2018-0135/comments

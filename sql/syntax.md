@@ -3,22 +3,22 @@
 
 ## Creation
 
-The script `CreateTables.py` will create the tables.
+The script `CreateTables.py` will create the tables and ingest the agency data from the list in *agencies.txt*.
 
-Usage: `python3 CreateTables.py`
+Usage: `docker-compose exec sql-client python CreateTables.py`
 
 
 ## Deletion
 
 The script `DropTables.py` will drop the tables.
 
-Usage: `python3 DropTables.py`
+Usage: `docker-compose exec sql-client python DropTables.py`
 
 ## Reset
 
 The script `ResetDatabase.py` will drop and recreate the tables in one command.
 
-Usage: `python3 ResetDatabase.py`
+Usage: `docker-compose exec sql-client python ResetDatabase.py`
 
 
 # Ingest
@@ -27,7 +27,7 @@ Usage: `python3 ResetDatabase.py`
 
 The script `IngestDocket.py` will ingest a given Docket Id, its documents, and comments **from the mirrulations S3 Bucket** into the database.
 
-Example Usage: `python3 IngestDocket.py DOS-2022-0004`
+Example Usage: `docker-compose exec sql-client python IngestDocket.py DOS-2022-0004`
 
 ## Multiple Dockets
 
@@ -42,19 +42,19 @@ DOS-2022-0004
 FAR-2023-0010
 ```
 
-Example Usage: `python3 IngestDocket.py dockets.txt`
+Example Usage: `docker-compose exec sql-client python IngestDocket.py dockets.txt`
 
 ### From an S3 Bucket
 
 The script `IngestFromBucket.py` will ingest all the dockets from an S3 bucket 
 
-Example Usage: `python3 IngestFromBucket.py BucketName`
+Example Usage: `docker-compose exec sql-client python IngestFromBucket.py BucketName`
 
 ### From files stored locally
 
 The script `IngestLocal.py` will ingest all files in a folder.
 
-Example Usage: `python3 IngestLocal.py dockets-data`
+Example Usage: `docker-compose exec sql-client python IngestLocal.py dockets-data`
 
 ## Additional Scripts
 - The scripts for Ingesting just comments, dockets, and documents are included for use in current and future scripts, but don't necessarily need to be ran directly in a development environment.
@@ -63,4 +63,13 @@ Example Usage: `python3 IngestLocal.py dockets-data`
 
 The script `Query.py` will query the database.
 
-Example Usage: `python3 Query.py "SELECT * FROM dockets;`
+Example Usage: `docker-compose exec sql-client python Query.py "SELECT * FROM dockets;`
+
+
+# Check Agencies List
+
+The script `CheckAgencies.py` will check the regulations.gov database through the API to see if there are any missing agencies in the `agencies.txt` and update the file if necessary.
+
+Example usage: `docker-compose exec sql-client python CheckAgencies.py`
+
+[You can click here to view rate limits for the regulations.gov API usage.](https://api.data.gov/docs/rate-limits/)

@@ -17,12 +17,12 @@ brew services stop postgresql
 
 * Check Docker Compose logs:
 ```bash
-docker-compose -f sql/docker-compose.yaml logs
+docker-compose -f sql/docker-compose.yaml logs sql-client
 ```
 
 * Verifying PostgreSQL container status:
 ```bash
-docker ps
+docker compose ps
 ```
 
 ## Environment Variable Issues
@@ -30,7 +30,7 @@ docker ps
 If you have your `.env` file configured with the correct credentials but are encountering issues with the psql database connection command:
 
  ```bash
- psql -h localhost -U $POSTGRES_USER -d $POSTGRES_DB
+ docker-compose exec sql-client psql -h db -U $POSTGRES_USER -d $POSTGRES_DB
  ```
 
  Load the `.env` file with your path using the following command:

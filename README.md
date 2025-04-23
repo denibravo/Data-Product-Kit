@@ -3,199 +3,201 @@ A guide to acquire, install and deploy the search capability via API, for SQL an
 
 ## Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)
-    * Certain issues with Docker may be resolved by uninstalling and reinstalling using homebrew:
+    * If you encounter issues with Docker, try uninstalling and reinstalling it using Homebrew:
     ```bash
     brew uninstall --cask docker --force
-
     brew uninstall --formula docker --force
-
     brew install --cask docker
     ```
-    * This will work even if you did not install Docker with homebrew originally.
+    * This works even if Docker was not originally installed using Homebrew.
 
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - [Python](https://www.python.org/downloads/)
 - [libpq](https://www.postgresql.org/docs/current/libpq.html#:~:text=libpq%20is%20the%20C%20application,the%20results%20of%20these%20queries.)
-    - libpq can be installed via homebrew
+    - Install `libpq` via Homebrew:
     ```bash
     brew install libpq
     brew link --force libpq
     ```
 
+- [Regulations.gov API Key](https://open.gsa.gov/api/regulationsgov/)
+   - Register for an API key at the top of the page
+
 ## Initial Setup
 
-Clone the `Data-Product-Kit` Repository: 
+Clone the `Data-Product-Kit` repository:
 ```bash
 git clone https://github.com/mirrulations/Data-Product-Kit.git
 ```
 
-Create a virtual environment, activate it, and install the requirements.
+Create a virtual environment, activate it, and install the requirements:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-# OpenSearch
+## Setting Up the Environment Variables
 
-## Installation of OpenSearch
-
-1. Navigate to the `opensearch` directory:
+Create a `.env` file in the parent directory with the following fields:
 ```bash
-cd opensearch
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=<your_secure_password>
+OPENSEARCH_HOST=opensearch-node1
+OPENSEARCH_PORT=9200
+S3_BUCKET_NAME=presentationbucketcs334s25
+POSTGRES_DB=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+REGULATIONS_API_KEY=<your_API_key>
 ```
-
-2. Create an `.env` file in the `opensearch` directory containing the following:
-
-**NOTE:** Including a `$` or a `!` in the password as a special character may lead to issues when running docker compose later on (the following text gets interpreted as a shell variable), so avoid using them in your password.
+**NOTE:** For OpenSearch including a `$` or a `!` in the password as a special character may lead to issues when running docker compose later on (the following text gets interpreted as a shell variable), so avoid using them in your password.
 
 **NOTE:** When running locally, you can set the username and password to any desired credentials. **Example credentials are included below:**
 
 ```bash
 OPENSEARCH_INITIAL_ADMIN_PASSWORD=C4nzUMkFu^e4N2
-OPENSEARCH_HOST=localhost
+OPENSEARCH_HOST=opensearch-node1
 OPENSEARCH_PORT=9200
-S3_BUCKET_NAME=docket-samples
+S3_BUCKET_NAME=presentationbucketcs334s25
 ```
-**NOTE:** <ins>The S3 Bucket we are using for sample data is `docket-samples`</ins>. You can use your own bucket by changing the value of S3_BUCKET_NAME in the `.env` file.
+**NOTE:** <ins>The S3 Bucket we are using for sample data is `presentationbucketcs334s25`</ins>. You can use your own bucket by changing the value of S3_BUCKET_NAME in the `.env` file.
 
-Run `source .env` to load the environment variables into the current shell session in case of any credential issues.
-
-3. Run the docker-compose file (make sure docker is running on your machine)
+Run the following command to load the environment variables:
 ```bash
-docker compose up -d
+source .env
 ```
 
-4. Confirm that the OpenSearch container is running and is accessible by running the following commands:
-```bash
-docker compose ps
-```
+# Docker Network
+We now use a Docker network that allows OpenSearch and SQL to communicate within containers without being exposed to the local machine.
+
+## Starting Services
+
+1. **Ensure Docker is running.**
+2. Start all services (OpenSearch, SQL, and Query):
+   ```bash
+   docker compose build --no-cache
+   docker compose up -d
+   ```
+**NOTE:** This should run a total of 7 containers, as well as running the Docker Network 
+
+3. Verify running containers:
+   ```bash
+   docker compose ps
+   ```
 **Note:** There should be 3 opensearch containers running upon successful execution. If you are having issues, you may want to revisit your password as the containers will not start with a low strength password. [Visit the OpenSearch troubleshooting guide for further assistance.](opensearch/opensearch_troubleshoot.md)
 
-
 ```bash
-curl https://localhost:9200 -ku admin:<your-admin-password>
+docker-compose exec opensearch-node1 curl -X GET "http://opensearch-node1:9200"  
 ```
 
+# OpenSearch
 
 ## Using OpenSearch
 
 1. In the virtual environment, run the following command to create the index and ingest the data:
-```bash
-python ingest.py
-```
-**NOTE:** This may take a few minutes to complete. It will produce one line of output for each document ingested.
+   ```bash
+   docker-compose exec ingest python /app/ingest.py
+   ```
+   **Note:** This may take a few minutes.
 
 2. To query the data, run the following command:
-```bash
-python query.py
-```
-**NOTE:** `query.py` is currently hard coded to search for the term "<ins>drug</ins>", but you can change this to any term you would like to search for.
+   ```bash
+   docker-compose exec ingest python /app/query.py <search_term>
+   ```
+   **Note:** Only dockets with matching comments will appear in the output.
 
-## Cleanup 
+## Cleanup
 
-1. To delete data from the OpenSearch instance, run the following command:
-```bash
-python delete_index.py
-```
-2. To stop the OpenSearch container, run the following command:
-```bash
-docker compose down
-```
+1. To delete data from the OpenSearch instance, run the following command: 
+   ```bash
+   docker-compose exec ingest python /app/delete_index.py
+   ```
 
 # SQL
 
 ### **Troubleshooting tips are available in the <u>[SQL Troubleshooting Guide](sql/sql_troubleshoot.md](https://github.com/mirrula**tions/Data-Product-Kit/blob/main/sql/sql_troubleshoot.md))</u>**
 
-## Installation of SQL
-
-1. Navigate to the `sql` directory:
-```bash
-cd sql
-```
-
-2. Create an `.env` file in the `sql` directory containing the following:
-```bash
-POSTGRES_DB=postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-```
-**NOTE:** When running locally, you can set the username and password to any desired credentials. Example credentials are displayed above.
-
-Run `source .env` to load the environment variables into the current shell session in case of any credential issues.
-
 ## Using SQL
-1. To start the SQL container, run the following command:
-```bash
-docker compose up -d
-```
 
-* You can run the following command to create the table and insert data:
-```bash
-python CreateTables.py
-```
+1. **Create Tables & Insert Data:**
+   ```bash
+   docker-compose exec sql-client python CreateTables.py
+   ```
 
-To ingest all the sample data from the S3 bucket, you can run the following command:
-```bash
-python IngestFromBucket.py docket-samples
-```
-**NOTE:** This may take a few minutes to complete.
+2. **Ingest Data from S3 Bucket:**
+   ```bash
+   docker-compose exec sql-client python IngestFromBucket.py presentationbucketcs334s25
+   ```
 
-* *Optional:* To ingest an individual docket with all its contents from the Mirrulations S3 bucket, you can run the following command:
-```bash
-python IngestFromS3.py <docket_id>
-```
-**NOTE:** Example docket: *DOS-2022-0004*
+3. **Optional: Ingest Individual Docket from Mirrulations S3 Bucket:**
+   ```bash
+   docker-compose exec sql-client python IngestDocket.py <docket_id>
+   ```
+   **Example Docket:** `DOS-2022-0004`
 
+4. **Optional: Ingest Agency Data From regulations.gov:**
+
+   To check for and insert missing agency data into the `agencies.txt` file, run:
+   ```bash
+   docker-compose exec sql-client python CheckAgencies.py
+   ```
 
 **IMPORTANT:** Additional documentation for all the scripts for SQL can be found [here](sql/syntax.md)
 
-### Querying
+### Querying SQL
 
-Queries can be made through the database connection or by running the `Query.py` script:
-
-1. <u>**PSQL Interface**</u>
-* You can connect to the database using the following command:
-
- ```bash
-psql -h localhost -U $POSTGRES_USER -d $POSTGRES_DB
- ```
-
-You can begin querying once the connection has been established. 
-
-**NOTE:** You can enhance readability of query output by toggling expanded display mode with this command:
-```bash
-\x
-```
-
-* To exit psql, type:
-```bash
-\q
-```
-or press `CTRL+D`
+1. **PSQL Interface:**
+   ```bash
+   docker-compose exec sql-client psql -h db -U postgres -d postgres
+   ```
+    You can begin querying once the connection has been established. 
 
 
-2. <u>**Query.py script**</u>
+   To enhance readability:
+   ```bash
+   \x
+   ```
+   Exit PSQL:
+   ```bash
+   \q
+   ```
+
+2. **Query Using Script:**
     * This command allows the user to input a SQL query:
-```bash
-python Query.py "SELECT docket_id FROM dockets;"
-```
+   ```bash
+   docker-compose exec sql-client python /app/Query.py "SELECT docket_id FROM dockets;"
+   ```
+
  An example query is provided above. 
 
 **NOTE:** Queries are limited to SELECT statements and must be written within the quotation marks.The script must be rerun per query issued; output is returned in JSON format.
 
 ## Cleanup
 
-**Note**: You can run the following command to drop the tables if you want to empty the database:
+1. **Drop Tables:**
+   ```bash
+   docker-compose exec sql-client python DropTables.py
+   ```
+
+# Querying Both OpenSearch & SQL
+
+To run a search query that integrates both OpenSearch and SQL:
 ```bash
-python DropTables.py
+docker compose exec queries python query.py "<search_term>"
 ```
 
-1. To stop the SQL container, run the following command:
+This will:
+1. Query OpenSearch for docket IDs matching the search term.
+2. Fetch additional details from SQL for those docket IDs.
+3. Return combined results.
+
+# Stop the Containers
+To stop the docker containers, run the following command:
 ```bash
 docker compose down
 ```
 
-If you have any further questions or need help, please reach out to a member of the Data Product team.
+For additional help, reach out to the Data Product team.
+

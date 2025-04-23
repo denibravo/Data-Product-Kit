@@ -1,0 +1,168 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    env_file:
+      - ./.env  # Load SQL environment variables
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - shared_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sql-client:
+    image: python:3.9-slim 
+    build: 
+      context: .
+      dockerfile: sql/Dockerfile
+    container_name: sql-client
+    env_file:
+      - ./.env
+    networks:
+      - shared_network
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./sql:/app
+      - ./data:/app/data
+      - ~/.aws:/root/.aws:ro  
+    working_dir: /app  
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  opensearch-node1:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node1
+    env_file:
+      - opensearch/.env
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - plugins.security.ssl.http.enabled=false
+      - plugins.security.ssl.transport.enabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+    expose:
+      - "9200"
+      - "9600"
+    networks:
+      - shared_network
+
+  opensearch-node2:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node2
+    env_file:
+      - ./.env
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node2
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - plugins.security.ssl.http.enabled=false
+      - plugins.security.ssl.transport.enabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - opensearch-data2:/usr/share/opensearch/data
+    expose:
+      - "9200"
+      - "9600"
+    networks:
+      - shared_network
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:latest
+    container_name: opensearch-dashboards
+    expose:
+      - "5601"
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]'
+    networks:
+      - shared_network
+
+  ingest:
+    build:
+      context: .  # Root directory
+      dockerfile: opensearch/Dockerfile
+    container_name: ingest-container
+    env_file:
+      - ./.env
+    environment:
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - plugins.security.ssl.http.enabled=false
+      - plugins.security.ssl.transport.enabled=false
+    networks:
+      - shared_network
+    depends_on:
+      opensearch-node1:
+        condition: service_healthy
+      opensearch-node2:
+        condition: service_healthy
+    volumes:
+      - ~/.aws:/root/.aws:ro  
+    command: ["/bin/sh", "-c", "while true; do sleep 30; done"] 
+
+  queries:
+    build:
+      context: .
+      dockerfile: queries/Dockerfile
+    container_name: queries-container
+    env_file:
+      - ./.env
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - shared_network
+    depends_on:
+      db:
+        condition: service_healthy
+      opensearch-node1:
+        condition: service_healthy
+      opensearch-node2:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - ~/.aws:/root/.aws:ro
+    working_dir: /app/queries
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+volumes:
+  postgres_data:
+  opensearch-data1:
+  opensearch-data2:
+
+networks:
+  shared_network:
+    name: shared_network
+    driver: bridge
