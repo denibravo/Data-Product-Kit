@@ -88,4 +88,5 @@ def IngestSQL():
     
 
 
-IngestSQL()
+if __name__ == "__main__":
+    IngestSQL()
