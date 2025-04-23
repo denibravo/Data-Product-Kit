@@ -1,3 +1,0 @@
-opensearch/docket-samples/CMS-2012-0031/
-opensearch/docket-samples/DEA-2016-0015/
-opensearch/docket-samples/HHS-OS-2016-0014/text-HHS-OS-2016-0014/comments_extracted_text/pdfminer/HHS-OS-2016-0014-0728_attachment_1_extracted.txt
