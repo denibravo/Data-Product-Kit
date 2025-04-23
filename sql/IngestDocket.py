@@ -1,6 +1,6 @@
-from utilities.ingest_comment import insert_comment
-from utilities.ingest_docket import insert_docket
-from utilities.ingest_document import insert_document
+from .utilities.ingest_comment import insert_comment
+from .utilities.ingest_docket import insert_docket
+from .utilities.ingest_document import insert_document
 import boto3
 import sys
 import os
@@ -87,8 +87,9 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python IngestDocket.py <docket_id>")
         sys.exit(1)
-
+  
     docket_id = sys.argv[1]  # Get docket_id from command line
+    print(docket_id)
     bucket_name = "mirrulations"
     s3 = boto3.resource(service_name="s3", region_name="us-east-1")
 
