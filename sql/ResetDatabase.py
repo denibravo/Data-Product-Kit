@@ -1,6 +1,6 @@
 from DropTables import (
-    drop_comments_table, 
-    drop_dockets_table, 
+    drop_comments_table,
+    drop_dockets_table,
     drop_documents_table,
     drop_agencies_table,
     drop_stored_results_table,
