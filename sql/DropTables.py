@@ -49,6 +49,9 @@ def drop_stored_results_table(conn: psycopg.Connection):
 
 def drop_agencies_table(conn: psycopg.Connection):
     _drop_table(conn, "agencies")
+    
+def drop_summaries_table(conn: psycopg.Connection):
+    _drop_table(conn, "summaries")
 
 def main():
     load_dotenv()
