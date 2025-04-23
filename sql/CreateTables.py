@@ -182,8 +182,7 @@ def create_abstracts_table(conn: psycopg.Connection):
     query = """ 
     CREATE TABLE abstracts (
         docket_id VARCHAR(50) NOT NULL REFERENCES dockets(docket_id),
-        abstract TEXT,
-        modify_date TIMESTAMP WITH TIME ZONE NOT NULL
+        abstract TEXT
     );
     """
     _create_table(conn, query, "abstracts")
@@ -195,8 +194,7 @@ def create_htm_summaries_table(conn: psycopg.Connection):
     CREATE TABLE htm_summaries (
         summary_id SERIAL PRIMARY KEY,
         docket_id VARCHAR(50) NOT NULL REFERENCES dockets(docket_id),
-        summary TEXT,
-        posted_date TIMESTAMP WITH TIME ZONE NOT NULL
+        summary TEXT
     );
     """
     _create_table(conn, query, "htm_summaries")
