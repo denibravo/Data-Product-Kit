@@ -50,6 +50,12 @@ The script `IngestFromBucket.py` will ingest all the dockets from an S3 bucket
 
 Example Usage: `python3 IngestFromBucket.py BucketName`
 
+### From files stored locally
+
+The script `IngestLocal.py` will ingest all files in a folder.
+
+Example Usage: `python3 IngestLocal.py dockets-data`
+
 ## Additional Scripts
 - The scripts for Ingesting just comments, dockets, and documents are included for use in current and future scripts, but don't necessarily need to be ran directly in a development environment.
 

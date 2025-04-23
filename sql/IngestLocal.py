@@ -1,7 +1,6 @@
 from utilities.ingest_comment import insert_comment
 from utilities.ingest_docket import insert_docket
 from utilities.ingest_document import insert_document
-import boto3
 import sys
 import os
 import psycopg
@@ -12,29 +11,31 @@ def get_agency(docket_id: str) -> str:
     return docket_id.split("-")[0]
 
 
-def get_text_content_from_s3(bucket, file_key: str):
+def get_text_content_from_s3(file_path: str):
     try:
-        obj = bucket.Object(file_key)
-        text = obj.get()["Body"].read().decode("utf-8")
+        with open(file_path, "r") as file:
+            text = file.read().rstrip()
 
-        return text
+            return text
     except Exception as e:
-        print(f"Error retrieving JSON file {file_key}, {e}")
+        print(f"Error retrieving JSON file {file_path}, {e}")
         return None
 
 
-def process_comments(bucket, conn, s3_path):
-    text = get_text_content_from_s3(bucket, s3_path)
+def process_comments(conn, s3_path):
+    text = get_text_content_from_s3(s3_path)
     insert_comment(conn, text)
 
 
-def process_dockets(bucket, conn, s3_path):
-    text = get_text_content_from_s3(bucket, s3_path)
+def process_dockets(conn, s3_path):
+    text = get_text_content_from_s3(s3_path)
     insert_docket(conn, text)
 
 
-def process_documents(bucket, conn, s3_path):
-    text = get_text_content_from_s3(bucket, s3_path)
+def process_documents(conn, s3_path):
+    text = get_text_content_from_s3(s3_path)
+    print(s3_path)
+    print(text)
     insert_document(conn, text)
 
 
@@ -56,20 +57,22 @@ def sort_files(files_list) -> list[str]:
     return sorted_files
 
 
-def categorize_and_process_files(bucket, conn, file_list):
+def categorize_and_process_files(conn, file_list):
     exclude_keywords = [
         "binary",
         "comments_extracted_text",
         "(1)",
+        ".htm",
+        ".DS_Store"
     ]  # (1) should be investgated
     for file_path in file_list:
         if all(keyword not in file_path for keyword in exclude_keywords):
             if "comments" in file_path:
-                process_comments(bucket, conn, file_path)
+                process_comments(conn, file_path)
             elif "docket" in file_path:
-                process_dockets(bucket, conn, file_path)
+                process_dockets(conn, file_path)
             elif "documents" in file_path:
-                process_documents(bucket, conn, file_path)
+                process_documents(conn, file_path)
             else:
                 print(f"Unknown category for file: {file_path}")
 
@@ -85,15 +88,15 @@ def get_s3_files(bucket, docket_id: str):
 def main():
     # Get docket_id from command line arguments
     if len(sys.argv) < 2:
-        print("Usage: python IngestDocket.py <docket_id>")
+        print("Usage: python IngestLocal.py <folder-containing-docket>")
         sys.exit(1)
 
-    docket_id = sys.argv[1]  # Get docket_id from command line
-    bucket_name = "mirrulations"
-    s3 = boto3.resource(service_name="s3", region_name="us-east-1")
-
-    bucket = s3.Bucket(bucket_name)
-    files = get_s3_files(bucket, docket_id)
+    path = sys.argv[1]  # Get docket_id from command line
+    files = [
+        os.path.join(dirpath, f)
+        for (dirpath, dirnames, filenames) in os.walk(path)
+        for f in filenames
+    ]
     sorted_files = sort_files(files)
 
     load_dotenv()
@@ -111,7 +114,7 @@ def main():
         "port": port,
     }
     with psycopg.connect(**conn_params) as conn:
-        categorize_and_process_files(bucket, conn, sorted_files)
+        categorize_and_process_files(conn, sorted_files)
 
 
 if __name__ == "__main__":
